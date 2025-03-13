@@ -1,72 +1,72 @@
 const User = require ("../models/User");
 const xlsx = require("xlsx")
-const Income = require("../models/Income")
-// add income source
-exports.addIncome = async (req, res) => {
+const Expense = require("../models/Expense")
+// add expense source
+exports.addExpense = async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const { icon, source, amount, date } = req.body
+        const { icon, category, amount, date } = req.body
 
         //validation
-        if(!source || !amount || !date) {
+        if(!category || !amount || !date) {
             return res.status(400).json({message:"All fields are required"})
         }
-        const newIncome = new Income({
+        const newExpense = new Expense({
             userId,
             icon,
-            source,
+            category,
             amount,
             date : new Date(date)
         });
 
-        await newIncome.save();
-        res.status(200).json(newIncome);
+        await newExpense.save();
+        res.status(200).json(newExpense);
     } catch (err){
-           res.status(500).json({message:"Internal server error"})
+        res.status(500).json({message:"Internal server error"})
     }
 }
 
-// getAll income source
-exports.getAllIncome = async (req, res) => {
+// getAll expense sources
+exports.getAllExpense = async (req, res) => {
     const userId = req.user.id;
     try {
-        const income = await Income.find({userId}).sort({date: -1});
-        res.json(income);
+        const expense = await Expense.find({userId}).sort({date: -1});
+        res.json(expense);
     }catch (err){
         res.status(500).json({message:"Internal server error"})
     }
 }
 
-// delete income source
-exports.deleteIncome = async (req, res) => {
+// delete expense source
+exports.deleteExpense = async (req, res) => {
     const userId = req.user.id;
     try{
-        await Income.findByIdAndDelete(req.params.id);
-        res.json({message:"Income deleted successfully"});
+        await Expense.findByIdAndDelete(req.params.id);
+        res.json({message:"Expense deleted successfully"});
     }catch (err){
         res.status(500).json({message:"Internal server error"});
     }
 };
 
-//download income excel
-exports.downloadIncomeExcel = async (req, res) => {
+//download expense excel
+exports.downloadExpenseExcel = async (req, res) => {
     const userId = req.user.id;
     try {
-        const income = await Income.find({ userId }).sort({ date: -1 });
+        const expense = await Expense.find({ userId }).sort({ date: -1 });
 
         // Preparing data for Excel
-        const data = income.map((item) => ({
-            Source: item.source,
+        const data = expense.map((item) => ({
+            Category: item.category,
             Amount: item.amount,
             Date: item.date.toISOString().split("T")[0],
         }));
 
         const wb = xlsx.utils.book_new();
         const ws = xlsx.utils.json_to_sheet(data);
-        xlsx.utils.book_append_sheet(wb, ws, "Income");
+        xlsx.utils.book_append_sheet(wb, ws, "Expense");
 
-        const filePath = "income_detail.xlsx"; // File name
+        const filePath = "expense_detail.xlsx"; // File name
         xlsx.writeFile(wb, filePath);
 
         res.download(filePath, (err) => {
